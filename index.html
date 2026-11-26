@@ -1,0 +1,275 @@
+<!DOCTYPE html>
+<html lang="it">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>AgriPredict AI – Modello dello scudo</title>
+<link rel="preconnect" href="https://fonts.googleapis.com"><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Lora:wght@600;700&family=Source+Sans+3:wght@400;600;700&display=swap" rel="stylesheet">
+<style>
+/* VOICE: chiaro e preciso, come un modellino da tavolo di agronomia e assicurazione
+   IDEA: una mappa catastale del pilota (20 celle da 250 ettari) che si accende mese per mese
+   PICTURE: la mappa delle celle, colorata dall'indice di siccità, con scudi, acqua, cisterne e pagamenti
+   COLOUR and TYPE: verde oliva scuro dominante, oro e ocra dal sole e dalla terra secca; Lora + Source Sans 3
+   LAYOUT: banda scura con titolo e comandi, poi mappa + racconto del mese, grafico dell'indice, conti, regole */
+:root{color-scheme:light dark;--bg:light-dark(#ffffff,#121a15);--ink:light-dark(#1f2a22,#e8ede6);--mute:light-dark(#5a6a60,#a9b8ad);--line:light-dark(#dde4d8,#2b3a30);--card:light-dark(#f1f4ee,#1a251e);--dark:#1F3A2B;--gold:#E9B872;--ochre:#B5651D;--olive:#6B8E4E;--water:#3f86c6}
+:root[data-theme=light]{color-scheme:light}:root[data-theme=dark]{color-scheme:dark}
+*{box-sizing:border-box;min-width:0}
+body{margin:0;background:var(--bg);color:var(--ink);font:16px/1.55 "Source Sans 3",system-ui,sans-serif;overflow-x:clip}
+h1,h2,h3{font-family:Lora,Georgia,serif;line-height:1.1;margin:0;text-wrap:balance}
+.band{padding:clamp(24px,4vw,52px) max(5vw,16px)}
+.wrap{max-width:1240px;margin:0 auto}
+header{background:var(--dark);color:#fff}
+header h1{font-size:clamp(28px,4vw,44px)}
+header p{color:#d9e2d3;max-width:70ch;margin:.6em 0 1.2em}
+.ctrl{display:flex;flex-wrap:wrap;gap:10px;align-items:center}
+.seg{display:flex;flex-wrap:wrap;gap:6px}
+button{font:600 15px "Source Sans 3",sans-serif;min-height:44px;padding:8px 14px;border-radius:10px;border:1.5px solid #4a5a50;background:#28473a;color:#fff;cursor:pointer}
+button[aria-pressed=true]{background:var(--gold);color:#1f2a22;border-color:var(--gold)}
+button:focus-visible,input:focus-visible{outline:3px solid var(--gold);outline-offset:2px}
+.months{display:flex;align-items:center;gap:12px;margin-top:14px;flex-wrap:wrap}
+input[type=range]{flex:1 1 260px;accent-color:var(--gold);height:44px}
+.mlab{font:700 20px Lora,serif;min-width:7.5em}
+.grid{display:grid;grid-template-columns:minmax(0,1.15fr) minmax(0,1fr);gap:clamp(16px,3vw,36px)}
+@media(max-width:860px){.grid{grid-template-columns:minmax(0,1fr)}}
+.map{position:relative;aspect-ratio:5/4.3;width:100%}
+.map svg{position:absolute;inset:0;width:100%;height:100%}
+.legend{display:flex;flex-wrap:wrap;gap:8px 16px;font-size:14px;color:var(--mute);margin-top:10px}
+.legend i{display:inline-block;width:14px;height:14px;border-radius:3px;vertical-align:-2px;margin-right:5px}
+.steps{display:flex;gap:6px;flex-wrap:wrap;margin-bottom:12px}
+.steps span{font-weight:700;font-size:14px;padding:6px 12px;border-radius:99px;background:var(--card);color:var(--mute)}
+.steps span.on{background:var(--ochre);color:#fff}
+.story h2{font-size:clamp(24px,3vw,32px);margin-bottom:8px}
+.story p{margin:.4em 0}
+.ia{border-left:4px solid var(--gold);background:var(--card);padding:12px 14px;border-radius:0 10px 10px 0;margin:12px 0}
+.ia b{color:var(--ochre)}
+.kpis{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:12px;margin-top:14px}
+@media(max-width:520px){.kpis{grid-template-columns:repeat(2,minmax(0,1fr))}}
+.k{background:var(--card);border-radius:12px;padding:12px}
+.k small{display:block;color:var(--mute);font-size:13px;line-height:1.3}
+.k strong{font:700 clamp(20px,2.4vw,26px) Lora,serif;white-space:nowrap}
+.fig{position:relative;min-height:300px}.fig>svg{position:absolute;inset:0;width:100%;height:100%}
+.layers{display:flex;height:34px;border-radius:8px;overflow:hidden;background:var(--card);margin:8px 0 4px}
+.layers div{display:flex;align-items:center;justify-content:center;color:#fff;font-weight:700;font-size:13px;white-space:nowrap;overflow:hidden;transition:width .4s}
+table{width:100%;border-collapse:collapse;font-size:15px}
+th,td{text-align:left;padding:9px 8px;border-bottom:1px solid var(--line);vertical-align:top}
+th{font-size:14px;color:var(--mute)}
+.note{font-size:14px;color:var(--mute)}
+.params{display:grid;grid-template-columns:repeat(auto-fill,minmax(230px,1fr));gap:12px;margin:14px 0}
+.pf{display:flex;flex-direction:column;gap:4px;font-size:14px;font-weight:600;color:var(--mute)}
+.pf input{font:600 16px "Source Sans 3",sans-serif;min-height:44px;padding:8px 10px;border:1.5px solid var(--line);border-radius:10px;background:var(--bg);color:var(--ink)}
+button.light{background:var(--card);color:var(--ink);border-color:var(--line)}
+.mode{margin-top:14px}.mode span{display:inline-block;font-weight:700;padding:6px 12px;border-radius:8px;color:#fff}.mode .on{background:#6B8E4E}.mode .off{background:#B5651D}
+.cmp .row{display:grid;grid-template-columns:7.5em minmax(0,1fr) 7em;gap:10px;align-items:center;margin:8px 0;opacity:.6}.cmp .row.cur{opacity:1;font-weight:700}
+.cmp .bar{height:22px;background:var(--card);border-radius:6px;overflow:hidden}.cmp .bar i{display:block;height:100%;transition:width .5s}.cmp b{text-align:right;white-space:nowrap}
+h2.sec{font-size:clamp(24px,3vw,32px);margin-bottom:10px}
+@media(prefers-reduced-motion:reduce){*{transition:none!important}}
+@media(max-width:600px){table{font-size:13px}.stack thead{display:none}.stack tr{display:grid;padding-block:10px}.stack td{display:flow-root;border:0;padding:3px 0;padding-inline-start:8em;text-align:start}.stack td::before{content:attr(data-l);float:inline-start;width:7.5em;margin-inline-start:-8em;white-space:normal;color:var(--mute)}.stack td:empty{display:none}}
+</style>
+<script>new MutationObserver(()=>{for(const c of document.querySelectorAll('.stack td:not([data-l])')){let i=0,p=c;while(p=p.previousElementSibling)i+=p.colSpan;c.dataset.l=c.closest('table').rows[0].cells[i]?.textContent||''}}).observe(document,{childList:true,subtree:true})</script>
+</head>
+<body>
+<header class="band"><div class="wrap">
+  <h1>Come l’IA accende lo scudo: il pilota mese per mese</h1>
+  <p>Modellino del pilota AgriPredict AI in Puglia: 5.000 ettari di oliveto divisi in 20 celle da 250 ettari. Scegli l’annata e scorri i mesi: vedi cosa prevede l’IA, quando scatta la polizza parametrica, chi paga e quanto danno si evita.</p>
+  <div class="ctrl">
+    <div class="seg" id="scen" role="group" aria-label="Annata"></div>
+    <button id="shield" aria-pressed="true">Scudo attivo</button>
+  </div>
+  <div class="months">
+    <button id="play" aria-label="Avvia">▶ Avvia</button>
+    <input type="range" id="m" min="0" max="8" value="0" aria-label="Mese">
+    <span class="mlab" id="mlab">Marzo</span>
+  </div>
+</div></header>
+
+<section class="band"><div class="wrap grid">
+  <div>
+    <div class="map"><svg id="map" viewBox="0 0 500 430" role="img" aria-label="Mappa delle 20 celle del pilota"></svg></div>
+    <div class="legend">
+      <span><i style="background:#9DB38A"></i>raccolto salvo</span><span><i style="background:#E9B872"></i>perdita fino al 10%</span><span><i style="background:#C98B4A"></i>perdita 30%</span><span><i style="background:#B5651D"></i>perdita 50% e oltre</span>
+      <span>◆ bordo oro = scudo attivo</span><span>goccia = acqua del consorzio</span><span>barile = cisterna condivisa</span><span>punto bianco = caolino</span><span>€ = la polizza ha pagato</span>
+    </div>
+    <p class="note">Il numero grande in ogni cella è la perdita di raccolto prevista a fine stagione, con o senza scudo: premi “Scudo attivo / Senza scudo” e guarda le celle cambiare. In basso, l’indice di siccità misurato finora (0 = stagione normale, 100 = nessuna pioggia).</p>
+  </div>
+  <div class="story">
+    <div class="steps" id="steps"><span>Prevede</span><span>Prezza</span><span>Protegge</span><span>Verifica</span></div>
+    <h2 id="title"></h2>
+    <p id="text"></p>
+    <div class="ia" id="ia"></div>
+    <div class="mode" id="mode"></div>
+    <div class="kpis" id="kpis"></div>
+    <h3 style="margin-top:16px;font-size:18px">Danno nei campi a fine stagione</h3>
+    <div class="cmp" id="cmp"></div>
+  </div>
+</div></section>
+
+<section class="band" style="padding-top:0"><div class="wrap grid">
+  <div>
+    <h2 class="sec">L’indice e la previsione dell’IA</h2>
+    <div class="fig"><svg id="chart" aria-label="Grafico dell'indice di siccità medio e della previsione"></svg></div>
+    <p class="note">Linea scura: indice medio misurato. Riquadro oro: dove l’IA prevede che l’indice finirà a settembre (90% di probabilità). Più passano i mesi, più la previsione si stringe.</p>
+  </div>
+  <div>
+    <h2 class="sec">Chi paga: la co-assicurazione</h2>
+    <div class="layers" id="layers"></div>
+    <p class="note" id="layernote"></p>
+    <table class="stack" id="money"><thead><tr><th>Voce</th><th>Senza scudo</th><th>Con scudo</th></tr></thead><tbody></tbody></table>
+  </div>
+</div></section>
+
+<section class="band" style="padding-top:0"><div class="wrap">
+  <h2 class="sec">Cambia le ipotesi</h2>
+  <p>Ogni numero del modello si può cambiare: mappa, grafico, conti e regole si aggiornano subito. Scegli “Annata a scelta” per provare un indice qualsiasi.</p>
+  <div class="params" id="params"></div>
+  <button id="reset" class="light">Ripristina i valori iniziali</button>
+</div></section>
+
+<section class="band" style="background:var(--card)"><div class="wrap">
+  <h2 class="sec">Le regole del modello</h2>
+  <p>Tutto è pubblico e deciso prima della stagione: è la trasparenza del progetto. Parametri illustrativi, da calibrare sui dati storici durante il pilota.</p>
+  <table class="stack"><thead><tr><th>Passo</th><th>Chi decide</th><th>Regola</th></tr></thead><tbody>
+    <tr><td><b>Indice di siccità</b></td><td>AgriPredict (agente di calcolo)</td><td>Media tra il deficit di pioggia e il deficit di umidità del suolo da aprile a settembre, rispetto alla media trentennale, misurati da satellite e stazioni meteo in ogni cella.</td></tr>
+    <tr><td><b>Previsione (Prevede)</b></td><td>IA</td><td id="r-prev"></td></tr>
+    <tr><td><b>Scudo (Protegge)</b></td><td>IA propone, Regione approva</td><td id="r-scudo"></td></tr>
+    <tr><td><b>Soglia</b></td><td>Regione, nel contratto</td><td id="r-soglia"></td></tr>
+    <tr><td><b>Pagamento (Prezza)</b></td><td>Formula del contratto</td><td id="r-pay"></td></tr>
+    <tr><td><b>Chi paga</b></td><td>Co-assicurazione</td><td id="r-chi"></td></tr>
+    <tr><td><b>Danno nei campi</b></td><td>Modello agronomico</td><td>Perdita di raccolto = indice − 15 punti percentuali (indice 52 → −37%, come nel 2022/23).</td></tr>
+    <tr><td><b>Verifica</b></td><td>AgriPredict e Regione</td><td>A ottobre–novembre si confronta il danno previsto con quello effettivo, si ricalibrano soglie e premio e si pubblicano i risultati.</td></tr>
+  </tbody></table>
+</div></section>
+
+<script>
+{
+const M=['Marzo','Aprile','Maggio','Giugno','Luglio','Agosto','Settembre','Ottobre','Novembre'];
+const W=[0,.12,.3,.5,.72,.9,1,1,1], AL=[.55,.65,.75,.85,.92,.97,1,1,1], SD=[10,9,7.5,6,4.5,3,0,0,0];
+const SC=[{n:'Annata normale',v:14},{n:'Siccità moderata',v:36},{n:'Siccità grave (come 2022)',v:52},{n:'Siccità estrema',v:66},{n:'Annata a scelta',v:52}];
+const OFF=[-8,-5,-3,0,2,4,6,-6,-2,1,3,5,8,-4,-1,0,2,7,-7,3], NOC=[4,9,13,18];
+// PARAMETRI DEL MODELLO (modificabili anche dal pannello "Cambia le ipotesi")
+const DEF={soglia:25,max:70,resa:425,prezzo:4.55,effPrima:40,effDopo:20,allerta:60,fondo:1,ettari:5000,indice:52};
+let P={...DEF};
+const CLIMA=20;
+let T,E,VAL,HA,FONDO;
+function setP(){T=P.soglia;E=Math.max(P.max,P.soglia+1);VAL=Math.round(P.resa*P.prezzo);HA=P.ettari/20;FONDO=P.fondo*1e6;SC[4].v=P.indice}
+let sc=2,m=0,shield=true,timer=null;
+const $=id=>document.getElementById(id);
+const clamp=(x,a,b)=>Math.max(a,Math.min(b,x));
+const erf=x=>{const t=1/(1+.3275911*Math.abs(x));const y=1-(((((1.061405429*t-1.453152027)*t)+1.421413741)*t-.284496736)*t+.254829592)*t*Math.exp(-x*x);return x>=0?y:-y};
+const prob=(c,sd)=>sd===0?(c>T?1:0):1-.5*(1+erf((T-c)/(sd*Math.SQRT2)));
+const pay=I=>VAL*clamp(I-T,0,E-T)/100;
+const loss=I=>VAL*clamp(I-15,0,70)/100;
+const eur=x=>x>=1e6?(x/1e6).toLocaleString('it-IT',{maximumFractionDigits:2})+' mln €':Math.round(x).toLocaleString('it-IT')+' €';
+function cells(){
+  const S=SC[sc].v;
+  return OFF.map((o,i)=>{
+    const fin=clamp(S+o,0,95);
+    const idx=W.map(w=>fin*w);
+    const fc=AL.map((a,k)=>a*fin+(1-a)*CLIMA);
+    const p=fc.map((c,k)=>prob(c,SD[k]));
+    let alert=p.findIndex(x=>x>P.allerta/100); if(alert<0)alert=99;
+    const act=alert===99?99:Math.max(1,alert);
+    let cross=idx.findIndex((x,k)=>k<=6&&x>T); if(cross<0)cross=99;
+    const eff=act===99?0:(act<cross?P.effPrima/100:P.effDopo/100);
+    return {i,fin,idx,fc,p,alert,act,cross,eff,cons:!NOC.includes(i)};
+  });
+}
+const lossPct=(c,on)=>clamp(c.fin-15,0,70)*(1-(on&&c.alert<=Math.max(m,1)?c.eff:0));
+function paidBy(c,k){ return pay(c.idx[Math.min(k,6)]); }
+function col(I){const s=[[0,[157,179,138]],[25,[233,184,114]],[45,[201,139,74]],[65,[181,101,29]],[85,[120,52,22]]];
+  for(let j=1;j<s.length;j++)if(I<=s[j][0]){const[a,ca]=s[j-1],[b,cb]=s[j],t=(I-a)/(b-a);return`rgb(${ca.map((v,q)=>Math.round(v+(cb[q]-v)*t)).join(',')})`}return'rgb(120,52,22)'}
+function drawMap(C){
+  const g=[];
+  C.forEach(c=>{
+    const x=10+(c.i%5)*97,y=10+Math.floor(c.i/5)*103,w=89,h=95,I=c.idx[Math.min(m,6)];
+    const on=shield&&m>=c.act&&m<=6, paid=paidBy(c,m)>0;
+    const L=lossPct(c,shield), dark=L>25;
+    g.push(`<g><rect x="${x}" y="${y}" width="${w}" height="${h}" rx="10" fill="${col(L+15)}" stroke="${on?'#E9B872':'rgba(0,0,0,.12)'}" stroke-width="${on?5:1}" style="transition:fill .5s"/>`);
+    g.push(`<text x="${x+10}" y="${y+28}" font-family="Lora,serif" font-weight="700" font-size="19" fill="${dark?'#fff':'#1f2a22'}">${L>0?'−'+Math.round(L)+'%':'0%'}</text>`);
+    g.push(`<text x="${x+10}" y="${y+90}" font-size="10" fill="${dark?'#fff':'#1f2a22'}">indice ${Math.round(I)}</text>`);
+    if(!shield||m>6||c.act>m){} else {
+      if(c.cons) g.push(`<path d="M${x+76} ${y+10} q7 10 0 14 q-7 -4 0 -14z" fill="#3f86c6" stroke="#fff" stroke-width="1.5"/>`);
+      else g.push(`<rect x="${x+68}" y="${y+8}" width="15" height="17" rx="3" fill="#8fa1ab" stroke="#fff" stroke-width="1.5"/><line x1="${x+68}" y1="${y+16}" x2="${x+83}" y2="${y+16}" stroke="#fff"/>`);
+      if(SC[sc].v>=45&&m>=3&&m<=5) g.push(`<circle cx="${x+46}" cy="${y+76}" r="8" fill="#fff" stroke="#c9c2b0"/>`);
+    }
+    if(c.alert<=m&&m<=6) g.push(`<text x="${x+10}" y="${y+48}" font-size="12" font-weight="700" fill="${dark?'#fff':'#1f2a22'}">allerta IA</text>`);
+    if(paid) g.push(`<circle cx="${x+70}" cy="${y+76}" r="12" fill="#E9B872" stroke="#1F3A2B" stroke-width="1.5"/><text x="${x+70}" y="${y+81}" text-anchor="middle" font-size="14" font-weight="700" fill="#1F3A2B">€</text>`);
+    if(!c.cons) g.push(`<text x="${x+10}" y="${y+63}" font-size="11" fill="${dark?'#fff':'#1f2a22'}">no consorzio</text>`);
+    g.push('</g>');
+  });
+  $('map').innerHTML=g.join('');
+}
+let lastC=[];
+const chart=$('chart');
+function drawChart(){
+  const C=lastC; if(!C.length)return;
+  const Wd=chart.clientWidth,H=chart.clientHeight,pl=34,pr=12,pt=14,pb=28,small=Wd<520;
+  const X=k=>pl+(Wd-pl-pr)*k/8, Y=v=>pt+(H-pt-pb)*(1-v/90);
+  const avg=k=>C.reduce((s,c)=>s+c.idx[k],0)/C.length, fca=k=>C.reduce((s,c)=>s+c.fc[k],0)/C.length;
+  let s='';
+  [0,25,50,70,90].forEach(v=>{s+=`<line x1="${pl}" x2="${Wd-pr}" y1="${Y(v)}" y2="${Y(v)}" stroke="var(--line)"/>`;if(!small||v%50===0||v===25)s+=`<text x="${pl-6}" y="${Y(v)+4}" text-anchor="end" font-size="12" fill="var(--mute)">${v}</text>`});
+  s+=`<line x1="${pl}" x2="${Wd-pr}" y1="${Y(T)}" y2="${Y(T)}" stroke="#B5651D" stroke-width="2" stroke-dasharray="6 5"/><text x="${pl+6}" y="${Y(T)-6}" font-size="12" font-weight="700" fill="#B5651D">soglia ${T}: la polizza paga</text>`;
+  s+=`<line x1="${pl}" x2="${Wd-pr}" y1="${Y(E)}" y2="${Y(E)}" stroke="#7a3416" stroke-width="1.5" stroke-dasharray="2 4"/><text x="${pl+6}" y="${Y(E)-6}" font-size="12" fill="var(--mute)">pagamento massimo</text>`;
+  M.forEach((n,k)=>{if(!small||k%2===0)s+=`<text x="${X(k)}" y="${H-8}" text-anchor="middle" font-size="12" fill="var(--mute)">${small?n.slice(0,3):n.slice(0,3)}</text>`});
+  const kk=Math.min(m,6);
+  if(m<6){const c=fca(m),sd=SD[m]*1.645;s+=`<rect x="${X(6)-14}" y="${Y(Math.min(90,c+sd))}" width="28" height="${Y(Math.max(0,c-sd))-Y(Math.min(90,c+sd))}" rx="6" fill="#E9B872" opacity=".55"/><line x1="${X(m)}" y1="${Y(avg(m))}" x2="${X(6)}" y2="${Y(c)}" stroke="#c99a4e" stroke-width="2" stroke-dasharray="4 4"/><circle cx="${X(6)}" cy="${Y(c)}" r="5" fill="#B5651D"/>`}
+  let d='';for(let k=0;k<=kk;k++)d+=(k?'L':'M')+X(k)+' '+Y(avg(k));
+  if(m>6)for(let k=7;k<=m;k++)d+='L'+X(k)+' '+Y(avg(6));
+  s+=`<path d="${d}" fill="none" stroke="#1F3A2B" stroke-width="3.5"/><circle cx="${X(m)}" cy="${Y(avg(kk))}" r="6" fill="#1F3A2B" stroke="#fff" stroke-width="2"/>`;
+  chart.innerHTML=s;
+}
+const ro=new ResizeObserver(drawChart);ro.observe(chart);
+function render(){
+  setP();rules();
+  const C=cells(); lastC=C; const kk=Math.min(m,6);
+  $('mlab').textContent=M[m];
+  drawMap(C); drawChart();
+  const avgI=C.reduce((s,c)=>s+c.idx[kk],0)/20, fcA=C.reduce((s,c)=>s+c.fc[Math.min(m,6)],0)/20;
+  const pA=C.reduce((s,c)=>s+c.p[Math.min(m,6)],0)/20, alerts=C.filter(c=>c.alert<=m).length;
+  const active=shield?C.filter(c=>c.act<=m&&m<=6).length:0, crossed=C.filter(c=>c.cross<=m).length;
+  const paid=C.reduce((s,c)=>s+paidBy(c,m),0)*HA, payFin=C.reduce((s,c)=>s+pay(c.fin),0)*HA;
+  const dmgOff=C.reduce((s,c)=>s+VAL*lossPct(c,false)/100,0)*HA, dmgOn=C.reduce((s,c)=>s+VAL*lossPct(c,true)/100,0)*HA;
+  const dmg0=dmgOff, dmg1=shield?dmgOn:dmgOff, lossAvg=C.reduce((s,c)=>s+lossPct(c,shield),0)/20;
+  const ph=m===0?0:(m>=7?3:(crossed>0||active>0?2:1));
+  [...$('steps').children].forEach((e,i)=>e.classList.toggle('on',i===ph||(ph===2&&i===1&&paid>0)));
+  let t,x,ia;
+  if(m===0){t='Marzo: l’IA prevede';x=`La stagione non è ancora iniziata. Satelliti, stazioni e storico delle piogge invernali alimentano il modello per ognuna delle 20 celle.`;}
+  else if(m<=6){t=`${M[m]}: ${crossed?'la polizza scatta':(active?'lo scudo si accende prima del danno':'l’IA sorveglia')}`;
+    x=`Indice medio misurato: <b>${avgI.toFixed(0)}</b> su una soglia di ${T}. ${crossed?`${crossed} celle su 20 hanno superato la soglia: la polizza ha già pagato <b>${eur(paid)}</b>${m===6?', saldo compreso':' (cresce ogni mese con l’indice, il saldo a settembre)'}.`:'Nessuna cella ha ancora superato la soglia.'} ${!shield?`<b>Senza scudo</b> nessuno interviene nei campi: la polizza paga lo stesso, ma il danno arriva pieno.`:''} ${shield&&active?`Lo scudo è attivo in <b>${active} celle</b>: ${SC[sc].v>=45&&m>=3&&m<=5?'acqua del consorzio o cisterne, e caolino contro il caldo.':'acqua del consorzio dove c’è, cisterne condivise dove non c’è.'}`:''}`;}
+  else {t=`${M[m]}: la verifica`;x=`Il raccolto conferma i conti. Danno nei campi: <b>${eur(dmg1)}</b>${shield?` invece di ${eur(dmgOff)} senza scudo`:`; con lo scudo sarebbe stato ${eur(dmgOn)}`}. I risultati vengono pubblicati e servono a ricalibrare soglie e premio: con lo scudo il premio scende da 186 a 93–130 € per ettaro.`;}
+  ia=m<=6?`<b>Cosa fa l’IA adesso.</b> Prevede che a settembre l’indice medio sarà circa <b>${fcA.toFixed(0)}</b>${SD[Math.min(m,6)]?` (±${(SD[Math.min(m,6)]*1.645).toFixed(0)})`:''}: probabilità media di superare la soglia <b>${Math.round(pA*100)}%</b>. Celle in allerta: <b>${alerts}</b>. ${!shield&&alerts?'Vede il pericolo, ma senza scudo il suo avviso resta sulla carta: nessuna acqua, nessun caolino.':alerts&&m>=1?'Propone alla Regione dove mandare prima l’acqua; la Regione approva.':(alerts?'Ad aprile proporrà di accendere lo scudo nelle celle in allerta.':'Nessun intervento: si risparmia acqua e denaro.')}`
+    :`<b>Cosa fa l’IA adesso.</b> Confronta previsioni e risultati cella per cella e impara: l’anno dopo previsioni più precise, meno rischio di base.`;
+  $('title').innerHTML=t;$('text').innerHTML=x;$('ia').innerHTML=ia;
+  const gap=dmg1-payFin;
+  $('mode').innerHTML=shield?'<span class="on">Proiezione con lo scudo</span>':'<span class="off">Proiezione senza scudo</span>';
+  $('kpis').innerHTML=[['Perdita di raccolto prevista',lossAvg>0?'−'+lossAvg.toFixed(0)+'%':'0%'],['Danno previsto nei campi',eur(dmg1)],['Danno evitato dallo scudo',eur(dmgOff-dmg1)],['Celle protette',(shield?C.filter(c=>c.alert<=Math.max(m,1)&&c.alert<99).length:0)+' su 20'],['Pagamento della polizza (fine stagione)',eur(payFin)],[gap>0?'Danno non coperto dalla polizza':'Avanzo che paga acqua e caolino',eur(Math.abs(gap))]].map(([a,b])=>`<div class="k"><small>${a}</small><strong>${b}</strong></div>`).join('');
+  const mx=Math.max(dmgOff,1);
+  $('cmp').innerHTML=[['Senza scudo',dmgOff,'#B5651D',!shield],['Con scudo',dmgOn,'#6B8E4E',shield]].map(([l,v,c,cur])=>`<div class="row${cur?' cur':''}"><span>${l}</span><div class="bar"><i style="width:${v/mx*100}%;background:${c}"></i></div><b>${eur(v)}</b></div>`).join('')+`<p class="note">La polizza paga ${eur(payFin)} in entrambi i casi: dipende dall’indice, non dal danno nel campo. Per questo chi previene ci guadagna.</p>`;
+  const fondo=Math.min(paid,FONDO),comp=Math.max(0,paid-FONDO),tot=Math.max(payFin,FONDO*1.2);
+  $('layers').innerHTML=`<div style="width:${fondo/tot*100}%;background:#6B8E4E">${fondo/tot>.3?'Fondo regionale':''}</div><div style="width:${comp/tot*100}%;background:#B5651D">${comp/tot>.25?'Compagnia':''}</div>`;
+  $('layernote').textContent=paid?`Finora la Regione ha pagato ${eur(fondo)} dal fondo di prima perdita (limite ${eur(FONDO)})${comp?`, la compagnia assicurativa ${eur(comp)} oltre il milione`:''}.`:'Finora nessun pagamento: la Regione ha speso solo il premio dello strato privato e la licenza.';
+  $('money').tBodies[0].innerHTML=[['Pagamento della polizza (fine stagione)',eur(payFin),eur(payFin)],['Danno nei campi',eur(dmgOff),eur(dmgOn)],['Danno per ettaro',eur(dmgOff/P.ettari),eur(dmgOn/P.ettari)],['Danno meno pagamento',eur(dmgOff-payFin),eur(dmgOn-payFin)]].map(r=>`<tr><td>${r[0]}</td><td>${r[1]}</td><td>${r[2]}</td></tr>`).join('');
+}
+function rules(){
+  const f=x=>x.toLocaleString('it-IT',{maximumFractionDigits:2});
+  $('r-soglia').textContent=`Indice ${T}: il livello che storicamente si supera circa un anno su cinque (da calibrare). Pagamento massimo a indice ${E}.`;
+  $('r-pay').textContent=`Per ettaro: valore della produzione (${f(P.resa)} kg di olio × ${f(P.prezzo)} €/kg = ${Math.round(VAL).toLocaleString('it-IT')} €) × (indice − ${T}) / 100, fino a ${Math.round(VAL*(E-T)/100).toLocaleString('it-IT')} €. Si paga subito, mese per mese, sull’indice misurato; a fine settembre il saldo sull’indice finale.`;
+  $('r-chi').textContent=`Il fondo regionale di prima perdita paga i primi ${eur(FONDO)}; oltre, la compagnia assicurativa.`;
+  $('r-scudo').textContent=`Da aprile, le celle in allerta ricevono prima l’acqua del consorzio; senza consorzio, la cisterna condivisa. Con un’annata grave, caolino da giugno ad agosto. Riduzione del danno: ${P.effPrima}% se lo scudo parte prima della soglia, ${P.effDopo}% se parte dopo.`;
+  $('r-prev').textContent=`Ogni mese stima dove finirà l’indice a settembre e con quale probabilità supererà la soglia. Se la probabilità supera il ${P.allerta}%, la cella va in allerta.`;
+}
+const FIELDS=[['indice','Indice a settembre (annata a scelta)',0,90,1],['soglia','Soglia della polizza (indice)',5,60,1],['max','Indice del pagamento massimo',30,95,1],['prezzo','Prezzo dell’olio (€/kg)',2,15,.05],['resa','Resa (kg di olio per ettaro)',150,800,5],['effPrima','Danno evitato se lo scudo parte prima (%)',0,80,5],['effDopo','Danno evitato se parte dopo (%)',0,80,5],['allerta','Probabilità che fa scattare l’allerta (%)',30,95,5],['fondo','Fondo regionale di prima perdita (mln €)',0,5,.1],['ettari','Ettari del pilota',1000,50000,500]];
+$('params').innerHTML=FIELDS.map(([k,l,a,b,st])=>`<label class="pf"><span>${l}</span><input type="number" id="p-${k}" min="${a}" max="${b}" step="${st}" value="${P[k]}"></label>`).join('');
+$('params').addEventListener('input',e=>{const k=e.target.id.slice(2);const v=parseFloat(e.target.value);if(!isNaN(v)){P[k]=v;if(k==='indice'){sc=4;[...$('scen').children].forEach((x,i)=>x.setAttribute('aria-pressed',i===4))}render()}});
+$('reset').addEventListener('click',()=>{P={...DEF};FIELDS.forEach(([k])=>$('p-'+k).value=P[k]);render()});
+$('scen').innerHTML=SC.map((s,i)=>`<button data-i="${i}" aria-pressed="${i===sc}">${s.n}</button>`).join('');
+$('scen').addEventListener('click',e=>{const b=e.target.closest('button');if(!b)return;sc=+b.dataset.i;[...$('scen').children].forEach(x=>x.setAttribute('aria-pressed',x===b));render()});
+$('shield').addEventListener('click',()=>{shield=!shield;$('shield').setAttribute('aria-pressed',shield);$('shield').textContent=shield?'Scudo attivo':'Senza scudo';render()});
+$('m').addEventListener('input',e=>{m=+e.target.value;render()});
+$('play').addEventListener('click',()=>{if(timer){clearInterval(timer);timer=null;$('play').textContent='▶ Avvia';return}
+  if(m>=8)m=0;$('play').textContent='❚❚ Pausa';timer=setInterval(()=>{m++;$('m').value=m;render();if(m>=8){clearInterval(timer);timer=null;$('play').textContent='▶ Avvia'}},1800);render()});
+render();
+}
+</script>
+</body>
+</html>
